@@ -1,6 +1,6 @@
 
 import Link from "next/link";
-import { TOOLS } from "@/data/tools";
+import { TOOLS } from "../data/tools";
 
 export default function HomePage() {
   return (

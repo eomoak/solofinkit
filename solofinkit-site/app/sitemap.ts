@@ -1,6 +1,6 @@
 
 import type { MetadataRoute } from "next";
-import { ACTIVE_TOOLS } from "@/data/tools";
+import { ACTIVE_TOOLS } from "../data/tools";
 
 const BASE_URL = "https://solofinkit.com";
 

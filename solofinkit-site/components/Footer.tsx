@@ -1,6 +1,6 @@
 
 import Link from "next/link";
-import { ACTIVE_TOOLS } from "@/data/tools";
+import { ACTIVE_TOOLS } from "../data/tools";
 
 export default function Footer() {
   return (

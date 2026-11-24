@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import Link from "next/link";
+import JsonLd from "../../components/JsonLd";
+import RelatedCalculators from "../../components/RelatedCalculators";
 
 // 常见跨境收款国家/地区预设费率结构（可根据 PayPal 官方最新标准微调）
 const PRESET_REGIONS = [
@@ -163,62 +164,24 @@ export default function PayPalInternationalFeeCalculator() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // JSON-LD 结构化数据（助力 Google 富媒体搜索摘要 & AI 搜索引擎引用）
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "SoftwareApplication",
-        name: "PayPal International Fee & Reverse Invoice Calculator",
-        applicationCategory: "FinanceApplication",
-        operatingSystem: "Web",
-        offers: {
-          "@type": "Offer",
-          price: "0",
-          priceCurrency: "USD",
-        },
-        description:
-          "Free online PayPal cross-border fee calculator and reverse invoice generator for freelancers and international contractors.",
-      },
-      {
-        "@type": "FAQPage",
-        mainEntity: [
-          {
-            "@type": "Question",
-            name: "How much does PayPal charge for international commercial payments?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "For most US-based freelancers receiving international business payments, PayPal charges a standard domestic commercial rate (around 2.99%) plus a 1.50% cross-border fee (totaling 4.49%) plus a fixed currency fee (e.g., $0.49 USD). If currency conversion is required, PayPal adds an additional 3% to 4% currency conversion spread.",
-            },
-          },
-          {
-            "@type": "Question",
-            name: "How do I calculate how much to invoice a client so I receive an exact amount after PayPal fees?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "To pass PayPal fees onto your client legally and accurately, switch our calculator to Reverse Invoice Mode. Enter your desired net payout, and the tool applies the reverse formula: Invoice Amount = (Desired Net / (1 - FX Rate) + Fixed Fee) / (1 - Percentage Fee).",
-            },
-          },
-          {
-            "@type": "Question",
-            name: "Why is PayPal's exchange rate different from Google's mid-market rate?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "PayPal builds a currency conversion spread (typically 3.0% to 4.0% above the wholesale mid-market exchange rate) whenever you receive funds in a foreign currency or withdraw to a local bank account in a different currency.",
-            },
-          },
-        ],
-      },
-    ],
-  };
+  const paypalFaqs = [
+    {
+      question: "How much does PayPal charge for international commercial payments?",
+      answer: "For standard Goods & Services or commercial invoice transactions, PayPal charges your domestic commercial rate (typically 2.90%–2.99%) plus a cross-border international fee of 1.50% to 1.99%, alongside a fixed fee based on the currency received (such as $0.49 USD or £0.30 GBP).",
+    },
+    {
+      question: "Can I avoid PayPal's 3.5%–4% currency conversion fee?",
+      answer: "Yes, in specific scenarios. If you hold a USD balance inside PayPal and have an eligible US domestic bank account (or a multi-currency receiving account that supports ACH transfers without forced conversion), you can withdraw USD directly and convert funds at near interbank rates using specialized FX providers.",
+    },
+    {
+      question: "Are PayPal fees tax-deductible for freelancers?",
+      answer: "Yes. In the United States (IRS Schedule C), UK (HMRC Self Assessment), and most OECD jurisdictions, payment processing fees and merchant transaction charges are 100% deductible business expenses. Always record the gross invoice amount as revenue and deduct the PayPal fee separately.",
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      {/* 注入结构化数据 */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd name="PayPal International Fee & Reverse Invoice Calculator" description="Free online PayPal cross-border fee calculator and reverse invoice generator for freelancers and international contractors." path="/paypal-international-fee-calculator" faqs={paypalFaqs} />
 
       {/* 顶部 Hero 区域 */}
       <section className="bg-slate-900 text-white border-b border-slate-800">
@@ -634,49 +597,7 @@ export default function PayPalInternationalFeeCalculator() {
             </div>
           </section>
 
-          {/* 站内关联工具内链矩阵（提升整站权重流转） */}
-          <section className="border-t border-slate-200 pt-8">
-            <h2 className="text-lg font-bold text-slate-900 mb-4">
-              Related Cross-Border Freelance Calculators
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Link
-                href="/stripe-international-fee-calculator"
-                className="p-4 rounded-xl border border-slate-200 hover:border-blue-500 hover:shadow-sm transition group"
-              >
-                <div className="font-semibold text-slate-900 group-hover:text-blue-600 mb-1">
-                  Stripe International Fee Calculator
-                </div>
-                <p className="text-xs text-slate-500">
-                  Compare 2.9% + 1.5% international card & FX fees against PayPal.
-                </p>
-              </Link>
-
-              <Link
-                href="/wise-vs-payoneer-fee-comparison"
-                className="p-4 rounded-xl border border-slate-200 hover:border-blue-500 hover:shadow-sm transition group"
-              >
-                <div className="font-semibold text-slate-900 group-hover:text-blue-600 mb-1">
-                  Wise vs. Payoneer Comparison
-                </div>
-                <p className="text-xs text-slate-500">
-                  See how much you save on multi-currency payouts vs. traditional SWIFT.
-                </p>
-              </Link>
-
-              <Link
-                href="/1099-tax-calculator"
-                className="p-4 rounded-xl border border-slate-200 hover:border-blue-500 hover:shadow-sm transition group"
-              >
-                <div className="font-semibold text-slate-900 group-hover:text-blue-600 mb-1">
-                  1099 Freelance Tax Estimator
-                </div>
-                <p className="text-xs text-slate-500">
-                  Calculate quarterly self-employment tax after deducting payment fees.
-                </p>
-              </Link>
-            </div>
-          </section>
+          <RelatedCalculators currentSlug="/paypal-international-fee-calculator" />
         </article>
       </main>
     </div>

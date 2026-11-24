@@ -1,33 +1,30 @@
 
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://solofinkit.com"),
-
   title: {
-    default: "SoloFinKit | Financial Tools for Freelancers",
+    default: "SoloFinKit - Finance Tools for Freelancers",
     template: "%s | SoloFinKit",
   },
-
   description:
-    "Practical financial calculators for freelancers and cross-border professionals. Calculate payment fees, currency conversion costs, invoices, and financial estimates.",
-
+    "Free online financial calculators and practical tools for freelancers, international contractors, and cross-border businesses.",
   applicationName: "SoloFinKit",
-
   openGraph: {
-    type: "website",
-    locale: "en_US",
-    siteName: "SoloFinKit",
-    title: "SoloFinKit | Financial Tools for Freelancers",
+    title: "SoloFinKit - Finance Tools for Freelancers",
     description:
-      "Simple and practical financial calculators for freelancers and cross-border professionals.",
+      "Free online financial calculators and practical tools for freelancers and cross-border businesses.",
     url: "https://solofinkit.com",
+    siteName: "SoloFinKit",
+    type: "website",
   },
-
   robots: {
     index: true,
     follow: true,
@@ -47,7 +44,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="flex min-h-screen flex-col bg-slate-50 font-sans text-slate-900 antialiased">
+      <body className="min-h-screen flex flex-col font-sans antialiased">
         <Navbar />
 
         <main className="min-h-screen flex-1">
@@ -55,6 +52,28 @@ export default function RootLayout({
         </main>
 
         <Footer />
+
+        {/* Google Analytics 4 */}
+        {GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+
+            <Script
+              id="google-analytics"
+              strategy="afterInteractive"
+            >
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){window.dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_ID}');
+              `}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   );

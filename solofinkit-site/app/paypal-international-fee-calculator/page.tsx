@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -5,12 +6,12 @@ import Link from "next/link";
 import JsonLd from "../../components/JsonLd";
 import RelatedCalculators from "../../components/RelatedCalculators";
 
-// 常见跨境收款国家/地区预设费率结构（可根据 PayPal 官方最新标准微调）
+// 常见跨境收款国家/地区预设费率结构
 const PRESET_REGIONS = [
   {
     id: "us-intl",
     name: "US Freelancer receiving International Payment",
-    basePercent: 4.49, // 2.99% 国内商业标准 + 1.50% 跨境附加费
+    basePercent: 4.49,
     fixedFee: 0.49,
     currencySymbol: "$",
     currencyCode: "USD",
@@ -19,8 +20,8 @@ const PRESET_REGIONS = [
   {
     id: "uk-intl",
     name: "UK Freelancer receiving Non-EEA / US Payment",
-    basePercent: 4.89, // 2.90% + 1.99% 跨区附加费
-    fixedFee: 0.30,
+    basePercent: 4.89,
+    fixedFee: 0.3,
     currencySymbol: "£",
     currencyCode: "GBP",
     note: "UK Commercial rate (2.90%) + 1.99% international fee + £0.30 fixed fee.",
@@ -37,8 +38,8 @@ const PRESET_REGIONS = [
   {
     id: "in-intl",
     name: "India / APAC Exporter receiving USD",
-    basePercent: 4.40,
-    fixedFee: 0.30,
+    basePercent: 4.4,
+    fixedFee: 0.3,
     currencySymbol: "$",
     currencyCode: "USD",
     note: "Standard export/international commercial rate (4.40% + $0.30 fixed fee).",
@@ -55,7 +56,6 @@ const PRESET_REGIONS = [
 ];
 
 export default function PayPalInternationalFeeCalculator() {
-  // 计算模式：'forward' (正向：算实收) | 'reverse' (反向：算开票金额)
   const [mode, setMode] = useState<"forward" | "reverse">("forward");
   const [amountInput, setAmountInput] = useState<string>("1000");
   const [selectedRegionId, setSelectedRegionId] = useState<string>("us-intl");
@@ -66,14 +66,18 @@ export default function PayPalInternationalFeeCalculator() {
   const [copied, setCopied] = useState<boolean>(false);
 
   const activeRegion = useMemo(
-    () => PRESET_REGIONS.find((r) => r.id === selectedRegionId) || PRESET_REGIONS[0],
+    () =>
+      PRESET_REGIONS.find((r) => r.id === selectedRegionId) ||
+      PRESET_REGIONS[0],
     [selectedRegionId]
   );
 
   // 切换地区时同步更新费率输入框
   const handleRegionChange = (regionId: string) => {
     setSelectedRegionId(regionId);
+
     const found = PRESET_REGIONS.find((r) => r.id === regionId);
+
     if (found && regionId !== "custom") {
       setCustomPercent(found.basePercent.toString());
       setCustomFixed(found.fixedFee.toString());
@@ -83,11 +87,15 @@ export default function PayPalInternationalFeeCalculator() {
   // 核心正向与反向计算逻辑
   const results = useMemo(() => {
     const rawAmount = parseFloat(amountInput);
-    const amount = isNaN(rawAmount) || rawAmount < 0 ? 0 : rawAmount;
+    const amount =
+      isNaN(rawAmount) || rawAmount < 0 ? 0 : rawAmount;
 
     const pRate = (parseFloat(customPercent) || 0) / 100;
     const fFee = parseFloat(customFixed) || 0;
-    const fxRate = includeFxConversion ? (parseFloat(fxSpreadPercent) || 0) / 100 : 0;
+
+    const fxRate = includeFxConversion
+      ? (parseFloat(fxSpreadPercent) || 0) / 100
+      : 0;
 
     if (amount === 0) {
       return {
@@ -101,13 +109,15 @@ export default function PayPalInternationalFeeCalculator() {
     }
 
     if (mode === "forward") {
-      // 正向计算：客户支付 amount，扣除 PayPal 固定及比例费用，再扣除换汇隐形点差
+      // 正向：客户支付金额，计算扣费后的实收金额
       const paypalFee = amount * pRate + fFee;
       const afterPaypal = Math.max(0, amount - paypalFee);
       const fxLoss = afterPaypal * fxRate;
       const netReceived = Math.max(0, afterPaypal - fxLoss);
+
       const totalDeductions = amount - netReceived;
-      const effectiveFeePercent = (totalDeductions / amount) * 100;
+      const effectiveFeePercent =
+        (totalDeductions / amount) * 100;
 
       return {
         invoiceAmount: amount,
@@ -118,10 +128,10 @@ export default function PayPalInternationalFeeCalculator() {
         effectiveFeePercent,
       };
     } else {
-      // 反向计算：希望最终落袋净收入 = amount，反推需要给客户开具多少发票金额 (Invoice Amount)
-      // 公式推导：Net = (Invoice * (1 - pRate) - fFee) * (1 - fxRate)
-      // => Invoice = (Net / (1 - fxRate) + fFee) / (1 - pRate)
+      // 反向：根据目标净收入反推发票金额
+      // Net = (Invoice * (1 - pRate) - fFee) * (1 - fxRate)
       const effectiveRetention = (1 - pRate) * (1 - fxRate);
+
       if (effectiveRetention <= 0) {
         return {
           invoiceAmount: 0,
@@ -134,11 +144,15 @@ export default function PayPalInternationalFeeCalculator() {
       }
 
       const preFxNeeded = amount / (1 - fxRate);
-      const invoiceAmount = (preFxNeeded + fFee) / (1 - pRate);
+      const invoiceAmount =
+        (preFxNeeded + fFee) / (1 - pRate);
+
       const paypalFee = invoiceAmount * pRate + fFee;
       const fxLoss = preFxNeeded - amount;
       const totalDeductions = invoiceAmount - amount;
-      const effectiveFeePercent = (totalDeductions / invoiceAmount) * 100;
+
+      const effectiveFeePercent =
+        (totalDeductions / invoiceAmount) * 100;
 
       return {
         invoiceAmount,
@@ -149,7 +163,14 @@ export default function PayPalInternationalFeeCalculator() {
         effectiveFeePercent,
       };
     }
-  }, [amountInput, mode, customPercent, customFixed, includeFxConversion, fxSpreadPercent]);
+  }, [
+    amountInput,
+    mode,
+    customPercent,
+    customFixed,
+    includeFxConversion,
+    fxSpreadPercent,
+  ]);
 
   const formatMoney = (val: number) => {
     return val.toLocaleString("en-US", {
@@ -158,31 +179,47 @@ export default function PayPalInternationalFeeCalculator() {
     });
   };
 
-  const handleCopyInvoiceAmount = () => {
+  const handleCopyInvoiceAmount = async () => {
     const textToCopy = results.invoiceAmount.toFixed(2);
-    navigator.clipboard.writeText(textToCopy);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
   };
 
   const paypalFaqs = [
     {
-      question: "How much does PayPal charge for international commercial payments?",
-      answer: "For standard Goods & Services or commercial invoice transactions, PayPal charges your domestic commercial rate (typically 2.90%–2.99%) plus a cross-border international fee of 1.50% to 1.99%, alongside a fixed fee based on the currency received (such as $0.49 USD or £0.30 GBP).",
+      question:
+        "How much does PayPal charge for international commercial payments?",
+      answer:
+        "For standard Goods & Services or commercial invoice transactions, PayPal charges your domestic commercial rate (typically 2.90%–2.99%) plus a cross-border international fee of 1.50% to 1.99%, alongside a fixed fee based on the currency received (such as $0.49 USD or £0.30 GBP).",
     },
     {
-      question: "Can I avoid PayPal's 3.5%–4% currency conversion fee?",
-      answer: "Yes, in specific scenarios. If you hold a USD balance inside PayPal and have an eligible US domestic bank account (or a multi-currency receiving account that supports ACH transfers without forced conversion), you can withdraw USD directly and convert funds at near interbank rates using specialized FX providers.",
+      question:
+        "Can I avoid PayPal's 3.5%–4% currency conversion fee?",
+      answer:
+        "Yes, in specific scenarios. If you hold a USD balance inside PayPal and have an eligible US domestic bank account (or a multi-currency receiving account that supports ACH transfers without forced conversion), you can withdraw USD directly and convert funds at near interbank rates using specialized FX providers.",
     },
     {
-      question: "Are PayPal fees tax-deductible for freelancers?",
-      answer: "Yes. In the United States (IRS Schedule C), UK (HMRC Self Assessment), and most OECD jurisdictions, payment processing fees and merchant transaction charges are 100% deductible business expenses. Always record the gross invoice amount as revenue and deduct the PayPal fee separately.",
+      question:
+        "Are PayPal fees tax-deductible for freelancers?",
+      answer:
+        "Yes. In the United States (IRS Schedule C), UK (HMRC Self Assessment), and most OECD jurisdictions, payment processing fees and merchant transaction charges are generally deductible business expenses. Always record the gross invoice amount as revenue and deduct the PayPal fee separately.",
     },
   ];
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      <JsonLd name="PayPal International Fee & Reverse Invoice Calculator" description="Free online PayPal cross-border fee calculator and reverse invoice generator for freelancers and international contractors." path="/paypal-international-fee-calculator" faqs={paypalFaqs} />
+      <JsonLd
+        name="PayPal International Fee & Reverse Invoice Calculator"
+        description="Free online PayPal cross-border fee calculator and reverse invoice generator for freelancers and international contractors."
+        path="/paypal-international-fee-calculator"
+        faqs={paypalFaqs}
+      />
 
       {/* 顶部 Hero 区域 */}
       <section className="bg-slate-900 text-white border-b border-slate-800">
@@ -192,13 +229,16 @@ export default function PayPalInternationalFeeCalculator() {
             <span>•</span>
             <span>Updated for 2026</span>
           </div>
+
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white mb-4">
             PayPal International Fee & Reverse Invoice Calculator
           </h1>
+
           <p className="text-slate-300 text-base sm:text-lg max-w-3xl leading-relaxed">
-            Instantly calculate PayPal cross-border merchant fees, fixed currency charges, and
-            hidden FX conversion spreads—or reverse-calculate the exact invoice amount to charge
-            international clients so you receive your full target rate.
+            Instantly calculate PayPal cross-border merchant fees, fixed
+            currency charges, and hidden FX conversion spreads—or
+            reverse-calculate the exact invoice amount to charge international
+            clients so you receive your full target rate.
           </p>
         </div>
       </section>
@@ -206,7 +246,7 @@ export default function PayPalInternationalFeeCalculator() {
       {/* 核心计算器交互区 */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 pb-16">
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-          {/* 模式切换 Tab */}
+          {/* 模式切换 */}
           <div className="grid grid-cols-2 border-b border-slate-200 bg-slate-100/70">
             <button
               type="button"
@@ -222,6 +262,7 @@ export default function PayPalInternationalFeeCalculator() {
                 (Client Pays → You Get)
               </span>
             </button>
+
             <button
               type="button"
               onClick={() => setMode("reverse")}
@@ -248,10 +289,12 @@ export default function PayPalInternationalFeeCalculator() {
                     ? `Gross Invoice Amount Client Sends (${activeRegion.currencyCode})`
                     : `Desired Net Payout You Want to Receive (${activeRegion.currencyCode})`}
                 </label>
+
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500 font-semibold text-lg">
                     {activeRegion.currencySymbol}
                   </span>
+
                   <input
                     type="number"
                     min="0"
@@ -262,6 +305,7 @@ export default function PayPalInternationalFeeCalculator() {
                     className="w-full pl-10 pr-4 py-3.5 text-xl font-bold text-slate-900 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition"
                   />
                 </div>
+
                 {/* 快捷金额按钮 */}
                 <div className="flex flex-wrap gap-2 mt-2.5">
                   {[250, 500, 1000, 2500, 5000].map((preset) => (
@@ -278,11 +322,12 @@ export default function PayPalInternationalFeeCalculator() {
                 </div>
               </div>
 
-              {/* 地区/费率预设选择 */}
+              {/* 地区/费率预设 */}
               <div>
                 <label className="block text-sm font-semibold text-slate-800 mb-2">
                   Account Region & Cross-Border Corridor
                 </label>
+
                 <select
                   value={selectedRegionId}
                   onChange={(e) => handleRegionChange(e.target.value)}
@@ -294,15 +339,19 @@ export default function PayPalInternationalFeeCalculator() {
                     </option>
                   ))}
                 </select>
-                <p className="mt-1.5 text-xs text-slate-500">{activeRegion.note}</p>
+
+                <p className="mt-1.5 text-xs text-slate-500">
+                  {activeRegion.note}
+                </p>
               </div>
 
-              {/* 自定义微调比例与固定费用 */}
+              {/* 自定义费率 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Transaction Fee (%)
                   </label>
+
                   <div className="relative">
                     <input
                       type="number"
@@ -316,19 +365,23 @@ export default function PayPalInternationalFeeCalculator() {
                       }}
                       className="w-full px-3.5 py-2.5 text-sm font-semibold text-slate-900 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none"
                     />
+
                     <span className="absolute inset-y-0 right-3 flex items-center text-slate-400 text-sm">
                       %
                     </span>
                   </div>
                 </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Fixed Fee ({activeRegion.currencyCode})
                   </label>
+
                   <div className="relative">
                     <span className="absolute inset-y-0 left-3 flex items-center text-slate-400 text-sm">
                       {activeRegion.currencySymbol}
                     </span>
+
                     <input
                       type="number"
                       step="0.01"
@@ -344,21 +397,26 @@ export default function PayPalInternationalFeeCalculator() {
                 </div>
               </div>
 
-              {/* 货币转换点差开关 */}
+              {/* 货币转换点差 */}
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-sm font-semibold text-slate-800 block">
                       Include Currency Conversion Spread (FX Markup)
                     </span>
+
                     <span className="text-xs text-slate-500">
-                      Applies when withdrawing or converting to a different currency
+                      Applies when withdrawing or converting to a different
+                      currency
                     </span>
                   </div>
+
                   <input
                     type="checkbox"
                     checked={includeFxConversion}
-                    onChange={(e) => setIncludeFxConversion(e.target.checked)}
+                    onChange={(e) =>
+                      setIncludeFxConversion(e.target.checked)
+                    }
                     className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
                   />
                 </div>
@@ -368,6 +426,7 @@ export default function PayPalInternationalFeeCalculator() {
                     <label className="text-xs font-medium text-slate-700">
                       Estimated PayPal FX Spread (%):
                     </label>
+
                     <div className="w-28 relative">
                       <input
                         type="number"
@@ -375,9 +434,12 @@ export default function PayPalInternationalFeeCalculator() {
                         min="0"
                         max="15"
                         value={fxSpreadPercent}
-                        onChange={(e) => setFxSpreadPercent(e.target.value)}
+                        onChange={(e) =>
+                          setFxSpreadPercent(e.target.value)
+                        }
                         className="w-full px-3 py-1.5 text-sm font-semibold text-slate-900 bg-white border border-slate-300 rounded-lg outline-none"
                       />
+
                       <span className="absolute inset-y-0 right-2.5 flex items-center text-slate-400 text-xs">
                         %
                       </span>
@@ -387,20 +449,25 @@ export default function PayPalInternationalFeeCalculator() {
               </div>
             </div>
 
-            {/* 右侧：计算结果看板 */}
+            {/* 右侧：计算结果 */}
             <div className="lg:col-span-5 p-6 sm:p-8 bg-slate-900 text-white flex flex-col justify-between">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                  {mode === "forward" ? "Estimated Net Payout" : "Recommended Invoice Amount"}
+                  {mode === "forward"
+                    ? "Estimated Net Payout"
+                    : "Recommended Invoice Amount"}
                 </div>
 
                 <div className="flex items-baseline gap-2 my-2">
                   <span className="text-4xl sm:text-5xl font-extrabold tracking-tight text-amber-400">
                     {activeRegion.currencySymbol}
                     {formatMoney(
-                      mode === "forward" ? results.netReceived : results.invoiceAmount
+                      mode === "forward"
+                        ? results.netReceived
+                        : results.invoiceAmount
                     )}
                   </span>
+
                   <span className="text-sm font-medium text-slate-400">
                     {activeRegion.currencyCode}
                   </span>
@@ -426,15 +493,21 @@ export default function PayPalInternationalFeeCalculator() {
                           d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
                         />
                       </svg>
-                      {copied ? "Copied Invoice Amount!" : "Copy Exact Invoice Amount"}
+
+                      {copied
+                        ? "Copied Invoice Amount!"
+                        : "Copy Exact Invoice Amount"}
                     </button>
                   </div>
                 )}
 
-                {/* 明细拆解列表 */}
+                {/* 费用明细 */}
                 <div className="mt-6 pt-6 border-t border-slate-800 space-y-3.5 text-sm">
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-400">Gross Invoice Total</span>
+                    <span className="text-slate-400">
+                      Gross Invoice Total
+                    </span>
+
                     <span className="font-semibold text-white">
                       {activeRegion.currencySymbol}
                       {formatMoney(results.invoiceAmount)}
@@ -443,9 +516,11 @@ export default function PayPalInternationalFeeCalculator() {
 
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400">
-                      PayPal Processing Fee ({customPercent}% + {activeRegion.currencySymbol}
+                      PayPal Processing Fee ({customPercent}% +{" "}
+                      {activeRegion.currencySymbol}
                       {customFixed})
                     </span>
+
                     <span className="font-semibold text-rose-400">
                       -{activeRegion.currencySymbol}
                       {formatMoney(results.paypalFee)}
@@ -454,8 +529,10 @@ export default function PayPalInternationalFeeCalculator() {
 
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400">
-                      FX Conversion Spread ({includeFxConversion ? `${fxSpreadPercent}%` : "0%"})
+                      FX Conversion Spread (
+                      {includeFxConversion ? `${fxSpreadPercent}%` : "0%"})
                     </span>
+
                     <span className="font-semibold text-rose-400">
                       -{activeRegion.currencySymbol}
                       {formatMoney(results.fxLoss)}
@@ -463,7 +540,10 @@ export default function PayPalInternationalFeeCalculator() {
                   </div>
 
                   <div className="pt-3 border-t border-slate-800 flex justify-between items-center">
-                    <span className="text-slate-300 font-medium">Total Fees & FX Loss</span>
+                    <span className="text-slate-300 font-medium">
+                      Total Fees & FX Loss
+                    </span>
+
                     <span className="font-bold text-rose-400">
                       -{activeRegion.currencySymbol}
                       {formatMoney(results.totalDeductions)} (
@@ -472,7 +552,10 @@ export default function PayPalInternationalFeeCalculator() {
                   </div>
 
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-300 font-medium">Final Net Received</span>
+                    <span className="text-slate-300 font-medium">
+                      Final Net Received
+                    </span>
+
                     <span className="font-bold text-emerald-400">
                       {activeRegion.currencySymbol}
                       {formatMoney(results.netReceived)}
@@ -481,81 +564,96 @@ export default function PayPalInternationalFeeCalculator() {
                 </div>
               </div>
 
-              {/* 底部省钱提示 */}
+              {/* 底部提示 */}
               <div className="mt-8 p-3.5 rounded-xl bg-slate-800/80 border border-slate-700 text-xs text-slate-300 leading-relaxed">
-                <strong className="text-amber-400">Pro Tip:</strong> Total cross-border deduction
-                is <span className="font-semibold text-white">{results.effectiveFeePercent.toFixed(2)}%</span>.
-                For invoices over $2,000, compare{" "}
+                <strong className="text-amber-400">Pro Tip:</strong>{" "}
+                Total cross-border deduction is{" "}
+                <span className="font-semibold text-white">
+                  {results.effectiveFeePercent.toFixed(2)}%
+                </span>
+                . For invoices over $2,000, compare{" "}
                 <Link
                   href="/stripe-international-fee-calculator"
                   className="underline text-blue-400 hover:text-blue-300"
                 >
                   Stripe International Fee Calculator
-                </Link>
-                  Wise vs. Payoneer
                 </Link>{" "}
-                to save up to 70% on FX spreads.
+                to compare payment processing costs and potential savings.
               </div>
             </div>
           </div>
         </div>
 
-        {/* 下方英文 SEO 指南与 FAQ 区域（提升 Google 收录与长尾关键词权重） */}
+        {/* SEO 指南与 FAQ */}
         <article className="mt-14 bg-white rounded-2xl border border-slate-200 p-6 sm:p-10 shadow-sm space-y-10">
           {/* 使用指南 */}
           <section className="space-y-4">
             <h2 className="text-2xl font-bold text-slate-900">
               How to Use the PayPal International Fee Calculator
             </h2>
+
             <p className="text-slate-600 leading-relaxed">
-              Receiving cross-border payments as a freelancer, remote contractor, or digital agency
-              involves multiple layers of fees that are often obscured until funds hit your bank
-              account. Our calculator breaks down every deduction into three clear steps:
+              Receiving cross-border payments as a freelancer, remote
+              contractor, or digital agency involves multiple layers of fees
+              that are often obscured until funds hit your bank account. Our
+              calculator breaks down every deduction into three clear steps:
             </p>
+
             <ol className="list-decimal pl-5 space-y-2.5 text-slate-700 leading-relaxed">
               <li>
                 <strong>Choose Forward or Reverse Mode:</strong> Use{" "}
-                <em>Calculate Net Payout</em> to see what lands in your account from an existing
-                offer. Switch to <em>Reverse Invoice Mode</em> when drafting a client invoice so
-                PayPal fees are factored into your billed total.
+                <em>Calculate Net Payout</em> to see what lands in your account
+                from an existing offer. Switch to <em>Reverse Invoice Mode</em>{" "}
+                when drafting a client invoice so PayPal fees are factored into
+                your billed total.
               </li>
+
               <li>
-                <strong>Select Your Sender/Receiver Corridor:</strong> Pick your home region preset
-                (US, UK, EU, or APAC) or enter your custom merchant rate if you qualify for high-volume
-                PayPal discounts.
+                <strong>Select Your Sender/Receiver Corridor:</strong> Pick
+                your home region preset (US, UK, EU, or APAC) or enter your
+                custom merchant rate if you qualify for high-volume PayPal
+                discounts.
               </li>
+
               <li>
-                <strong>Account for Currency Conversion (FX Spread):</strong> If your client pays
-                in USD and you withdraw in EUR, GBP, or local currency, keep the FX spread toggle
-                active (typically 3.0%–4.0%) to avoid overestimating your true take-home income.
+                <strong>Account for Currency Conversion (FX Spread):</strong>{" "}
+                If your client pays in USD and you withdraw in EUR, GBP, or
+                local currency, keep the FX spread toggle active (typically
+                3.0%–4.0%) to avoid overestimating your true take-home income.
               </li>
             </ol>
           </section>
 
-          {/* 计算公式揭秘 */}
+          {/* 计算公式 */}
           <section className="space-y-4 border-t border-slate-200 pt-8">
             <h2 className="text-2xl font-bold text-slate-900">
               The Exact Reverse PayPal Invoice Formula
             </h2>
+
             <p className="text-slate-600 leading-relaxed">
-              A common mistake among freelancers is simply adding 4.5% to their rate (e.g., billing
-              $1,045 to receive $1,000). Because PayPal charges its percentage fee on the{" "}
-              <em>entire gross invoice amount</em>, adding 4.5% still leaves you short. The true
-              mathematical formula to protect your net margin is:
+              A common mistake among freelancers is simply adding 4.5% to
+              their rate (e.g., billing $1,045 to receive $1,000). Because
+              PayPal charges its percentage fee on the{" "}
+              <em>entire gross invoice amount</em>, adding 4.5% still leaves
+              you short. The true mathematical formula to protect your net
+              margin is:
             </p>
+
             <div className="p-4 bg-slate-900 text-amber-300 font-mono text-xs sm:text-sm rounded-xl overflow-x-auto">
-              Invoice Amount = [ (Desired Net Payout ÷ (1 − FX Spread Rate)) + Fixed Fee ] ÷ (1 −
-              PayPal Percentage Rate)
+              Invoice Amount = [ (Desired Net Payout ÷ (1 − FX Spread Rate)) +
+              Fixed Fee ] ÷ (1 − PayPal Percentage Rate)
             </div>
+
             <p className="text-sm text-slate-500">
-              Note: Always check your local jurisdiction and PayPal User Agreement regarding
-              surcharging rules. Rather than listing a separate &ldquo;PayPal surcharge&rdquo; line
-              item, most consultants incorporate payment processing overhead directly into their
-              gross project quote.
+              Note: Always check your local jurisdiction and PayPal User
+              Agreement regarding surcharging rules. Rather than listing a
+              separate &ldquo;PayPal surcharge&rdquo; line item, most
+              consultants incorporate payment processing overhead directly
+              into their gross project quote.
             </p>
           </section>
 
-          {/* 常见问题 FAQ */}
+          {/* FAQ */}
           <section className="space-y-6 border-t border-slate-200 pt-8">
             <h2 className="text-2xl font-bold text-slate-900">
               Frequently Asked Questions (FAQ)
@@ -564,13 +662,16 @@ export default function PayPalInternationalFeeCalculator() {
             <div className="space-y-5">
               <div>
                 <h3 className="text-lg font-semibold text-slate-900 mb-1.5">
-                  1. How much does PayPal charge for international commercial payments?
+                  1. How much does PayPal charge for international commercial
+                  payments?
                 </h3>
+
                 <p className="text-slate-600 leading-relaxed">
-                  For standard Goods & Services or commercial invoice transactions, PayPal charges
-                  your domestic commercial rate (typically 2.90%–2.99%) plus a cross-border
-                  international fee of 1.50% to 1.99%, alongside a fixed fee based on the currency
-                  received (such as $0.49 USD or £0.30 GBP).
+                  For standard Goods & Services or commercial invoice
+                  transactions, PayPal charges your domestic commercial rate
+                  (typically 2.90%–2.99%) plus a cross-border international fee
+                  of 1.50% to 1.99%, alongside a fixed fee based on the
+                  currency received (such as $0.49 USD or £0.30 GBP).
                 </p>
               </div>
 
@@ -578,11 +679,14 @@ export default function PayPalInternationalFeeCalculator() {
                 <h3 className="text-lg font-semibold text-slate-900 mb-1.5">
                   2. Can I avoid PayPal&apos;s 3.5%–4% currency conversion fee?
                 </h3>
+
                 <p className="text-slate-600 leading-relaxed">
-                  Yes, in specific scenarios. If you hold a USD balance inside PayPal and have a
-                  eligible US domestic bank account (or a multi-currency receiving account that
-                  supports ACH transfers without forced conversion), you can withdraw USD directly
-                  and convert funds at near interbank rates using specialized FX providers.
+                  Yes, in specific scenarios. If you hold a USD balance inside
+                  PayPal and have an eligible US domestic bank account (or a
+                  multi-currency receiving account that supports ACH transfers
+                  without forced conversion), you can withdraw USD directly
+                  and convert funds at near interbank rates using specialized
+                  FX providers.
                 </p>
               </div>
 
@@ -590,11 +694,14 @@ export default function PayPalInternationalFeeCalculator() {
                 <h3 className="text-lg font-semibold text-slate-900 mb-1.5">
                   3. Are PayPal fees tax-deductible for freelancers?
                 </h3>
+
                 <p className="text-slate-600 leading-relaxed">
-                  Yes. In the United States (IRS Schedule C), UK (HMRC Self Assessment), and most
-                  OECD jurisdictions, payment processing fees and merchant transaction charges are
-                  100% deductible business expenses. Always record the gross invoice amount as
-                  revenue and deduct the PayPal fee separately.
+                  Yes. In the United States (IRS Schedule C), UK (HMRC Self
+                  Assessment), and most OECD jurisdictions, payment processing
+                  fees and merchant transaction charges are generally
+                  deductible business expenses. Always record the gross
+                  invoice amount as revenue and deduct the PayPal fee
+                  separately.
                 </p>
               </div>
             </div>

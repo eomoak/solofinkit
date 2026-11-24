@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import JsonLd from "../../components/JsonLd";
 import RelatedCalculators from "../../components/RelatedCalculators";
 
@@ -486,9 +487,11 @@ export default function PayPalInternationalFeeCalculator() {
                 is <span className="font-semibold text-white">{results.effectiveFeePercent.toFixed(2)}%</span>.
                 For invoices over $2,000, compare{" "}
                 <Link
-                  href="/wise-vs-payoneer-fee-comparison"
+                  href="/stripe-international-fee-calculator"
                   className="underline text-blue-400 hover:text-blue-300"
                 >
+                  Stripe International Fee Calculator
+                </Link>
                   Wise vs. Payoneer
                 </Link>{" "}
                 to save up to 70% on FX spreads.

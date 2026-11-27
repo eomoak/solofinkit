@@ -1,6 +1,7 @@
 
 import Link from "next/link";
 import { ACTIVE_TOOLS } from "../data/tools";
+import BrandLogo from "./BrandLogo";
 
 export default function Footer() {
   return (
@@ -8,11 +9,8 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <Link
-              href="/"
-              className="text-xl font-bold tracking-tight text-slate-900"
-            >
-              SoloFinKit<span className="text-blue-600">.</span>
+            <Link href="/" aria-label="SoloFinKit home" className="inline-flex items-center">
+              <BrandLogo size="md" />
             </Link>
 
             <p className="mt-4 max-w-sm text-sm leading-7 text-slate-500">
